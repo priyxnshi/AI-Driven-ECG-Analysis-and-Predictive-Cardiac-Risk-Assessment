@@ -10,11 +10,39 @@ import pywt
 from sklearn.preprocessing import MinMaxScaler
 
 # Create output folders if they don't exist
-os.makedirs("plots", exist_ok=True)
+os.makedirs("plots",   exist_ok=True)
 os.makedirs("outputs", exist_ok=True)
+os.makedirs("dataset", exist_ok=True)
 
 # =========================================================
-# STEP 1 — READ MIT-BIH ECG DATASET
+# RECORDS — MIT-BIH records to use
+#   Chosen to cover all 5 classes: N, V, A, L, R
+# =========================================================
+
+RECORDS = [
+    '100', '101', '106', '108', '109',   # N, V, A
+    '111', '114', '118', '119', '124',   # L, R
+    '200', '201', '207', '208', '209',   # L, R, V, A
+    '212', '213', '214', '231', '232',   # R, L, V, A
+]
+
+# Download only the 3 required files per record (.dat, .hea, .atr)
+print("Checking / downloading MIT-BIH records...")
+for rec in RECORDS:
+    if not os.path.exists(f"dataset/{rec}.dat"):
+        try:
+            wfdb.dl_files(
+                'mitdb',
+                dl_dir='dataset',
+                files=[f'{rec}.dat', f'{rec}.hea', f'{rec}.atr']
+            )
+            print(f"  Downloaded record {rec}")
+        except Exception as e:
+            print(f"  Could not download {rec}: {e}")
+print("Done.\n")
+
+# =========================================================
+# STEP 1 — READ MIT-BIH ECG DATASET (record 100 for plots)
 # =========================================================
 
 record = wfdb.rdrecord('dataset/100')
@@ -443,45 +471,89 @@ plt.savefig("plots/single_beat_pqrst.png")
 plt.show()
 
 # =========================================================
-# STEP 13 — HEARTBEAT SEGMENTATION
+# STEP 13 — PREPROCESSING FUNCTION (applied to each record)
+# =========================================================
+
+def preprocess_signal(sig, fs):
+
+    # Bandpass filter
+    bp = bandpass_filter(sig, fs=fs)
+
+    # Notch filter
+    notch = notch_filter(bp, fs=fs)
+
+    # Wavelet denoise
+    wt = wavelet_denoise(notch)[:len(notch)]
+
+    # Normalize
+    norm = MinMaxScaler().fit_transform(
+        wt.reshape(-1, 1)
+    ).flatten()
+
+    return norm
+
+# =========================================================
+# STEP 14 — MULTI-RECORD BEAT SEGMENTATION
 # =========================================================
 
 WINDOW_BEFORE = 128
 WINDOW_AFTER  = 128
-WINDOW_SIZE   = WINDOW_BEFORE + WINDOW_AFTER   # FIX: was undefined before
+WINDOW_SIZE   = WINDOW_BEFORE + WINDOW_AFTER
+
+valid_labels = ['N', 'V', 'A', 'L', 'R']
 
 X = []
 y = []
 
-valid_labels = ['N', 'V', 'A', 'L', 'R']
+for rec_name in RECORDS:
 
-for i in range(len(annotation.sample)):
-
-    r_peak = annotation.sample[i]
-    label = annotation.symbol[i]
-
-    if label not in valid_labels:
+    try:
+        rec  = wfdb.rdrecord(f'dataset/{rec_name}')
+        ann  = wfdb.rdann(f'dataset/{rec_name}', 'atr')
+    except Exception as e:
+        print(f"  Skipping {rec_name}: {e}")
         continue
 
-    start = r_peak - WINDOW_BEFORE
-    end = r_peak + WINDOW_AFTER
+    sig  = rec.p_signal[:, 0]
+    r_fs = rec.fs
 
-    if start < 0 or end > len(normalized_ecg):
-        continue
+    norm = preprocess_signal(sig, r_fs)
 
-    beat = normalized_ecg[start:end]
+    beats_added = 0
 
-    X.append(beat)
-    y.append(label)
+    for i in range(len(ann.sample)):
+
+        r_peak = ann.sample[i]
+        label  = ann.symbol[i]
+
+        if label not in valid_labels:
+            continue
+
+        start = r_peak - WINDOW_BEFORE
+        end   = r_peak + WINDOW_AFTER
+
+        if start < 0 or end > len(norm):
+            continue
+
+        X.append(norm[start:end])
+        y.append(label)
+        beats_added += 1
+
+    print(f"  Record {rec_name}: {beats_added} beats added")
 
 X = np.array(X)
 y = np.array(y)
 
-print("Dataset Shape:", X.shape)
-print("Labels Shape:", y.shape)
+# Label distribution
+print("\nTotal Dataset Shape:", X.shape)
+print("Label Distribution:")
+unique, counts = np.unique(y, return_counts=True)
+label_names_map = {'N': 'Normal', 'V': 'Ventricular', 'A': 'Atrial', 'L': 'LBBB', 'R': 'RBBB'}
+for lbl, cnt in zip(unique, counts):
+    print(f"  {lbl} ({label_names_map.get(lbl, '?'):<14}): {cnt}")
 
 # =========================================================
-# STEP 14 — SAVE DATASET
+# STEP 15 — SAVE DATASET
 # =========================================================
 
 np.save("outputs/X.npy", X)
@@ -490,7 +562,7 @@ np.save("outputs/y.npy", y)
 print("Dataset Saved!")
 
 # =========================================================
-# STEP 15 — ECG SEGMENTATION
+# STEP 16 — ECG SEGMENTATION
 # =========================================================
 
 segments = []
@@ -506,7 +578,7 @@ segments = np.array(segments)
 print("Segments Shape:", segments.shape)
 
 # =========================================================
-# STEP 16 — SAVE SEGMENTS
+# STEP 17 — SAVE SEGMENTS
 # =========================================================
 
 np.save("outputs/ecg_segments.npy", segments)
@@ -514,7 +586,7 @@ np.save("outputs/ecg_segments.npy", segments)
 print("ECG Segments Saved!")
 
 # =========================================================
-# STEP 17 — COMPARISON PLOT
+# STEP 18 — COMPARISON PLOT
 # =========================================================
 
 plt.figure(figsize=(15,10))

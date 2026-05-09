@@ -1,12 +1,17 @@
+import os
 import wfdb
 import numpy as np
 import matplotlib.pyplot as plt
 
 from scipy.fft import fft, fftfreq
-from scipy.signal import butter, filtfilt, iirnotch
+from scipy.signal import butter, filtfilt, iirnotch, find_peaks
 
 import pywt
 from sklearn.preprocessing import MinMaxScaler
+
+# Create output folders if they don't exist
+os.makedirs("plots", exist_ok=True)
+os.makedirs("outputs", exist_ok=True)
 
 # =========================================================
 # STEP 1 — READ MIT-BIH ECG DATASET
@@ -152,7 +157,9 @@ def wavelet_denoise(signal, wavelet='db4', level=4):
 
     coeffs = pywt.wavedec(signal, wavelet, level=level)
 
-    threshold = np.sqrt(2 * np.log(len(signal)))
+    # MAD-based noise estimate from finest detail coefficients
+    sigma     = np.median(np.abs(coeffs[-1])) / 0.6745
+    threshold = sigma * np.sqrt(2 * np.log(len(signal)))
 
     denoised_coeffs = []
 
@@ -212,10 +219,279 @@ plt.savefig("plots/normalized_ecg.png")
 plt.show()
 
 # =========================================================
-# STEP 9 — ECG SEGMENTATION
+# STEP 9 — R PEAK DETECTION
 # =========================================================
 
-WINDOW_SIZE = 256
+r_peaks, properties = find_peaks(
+    normalized_ecg,
+    distance=150,
+    height=0.6
+)
+
+print("Number of R Peaks:", len(r_peaks))
+
+# Plot R Peaks
+plt.figure(figsize=(15,4))
+
+# Use range(1000,3000) so signal x and peak x are in the same coordinate space
+plt.plot(range(1000, 3000), normalized_ecg[1000:3000])
+
+# Show peaks only in displayed region
+visible_peaks = r_peaks[
+    (r_peaks >= 1000) & (r_peaks <= 3000)
+]
+
+plt.plot(
+    visible_peaks,
+    normalized_ecg[visible_peaks],
+    "ro"
+)
+
+plt.title("R Peak Detection")
+plt.xlabel("Samples")
+plt.ylabel("Amplitude")
+
+plt.grid()
+
+plt.savefig("plots/r_peaks.png")
+
+plt.show()
+
+# =========================================================
+# STEP 10 — Q, S, P, T DETECTION
+# =========================================================
+
+# Physiologically correct search windows (in ms → samples at fs Hz)
+# Q wave  : 5–50 ms before R        (sits just left of R peak)
+# S wave  : 5–80 ms after R         (sits just right of R peak)
+# P wave  : 80–220 ms before R      (small bump before QRS)
+# T wave  : 100–400 ms after R      (broad bump after QRS)
+
+Q_START_MS  = 50  ;  Q_END_MS  = 5
+S_START_MS  = 5   ;  S_END_MS  = 80
+P_START_MS  = 220 ;  P_END_MS  = 80
+T_START_MS  = 100 ;  T_END_MS  = 400
+
+def ms(milliseconds):
+    return max(1, int(milliseconds * fs / 1000))
+
+q_peaks = []
+s_peaks = []
+p_peaks = []
+t_peaks = []
+
+for r in r_peaks:
+
+    # --- Q wave: minimum just before R ---
+    q_start = max(0, r - ms(Q_START_MS))
+    q_end   = max(0, r - ms(Q_END_MS))
+    if q_end > q_start:
+        q = np.argmin(normalized_ecg[q_start:q_end]) + q_start
+        q_peaks.append(q)
+
+    # --- S wave: minimum just after R ---
+    s_start = min(len(normalized_ecg), r + ms(S_START_MS))
+    s_end   = min(len(normalized_ecg), r + ms(S_END_MS))
+    if s_end > s_start:
+        s = np.argmin(normalized_ecg[s_start:s_end]) + s_start
+        s_peaks.append(s)
+
+    # --- P wave: largest peak in pre-QRS window ---
+    p_start = max(0, r - ms(P_START_MS))
+    p_end   = max(0, r - ms(P_END_MS))
+    if p_end > p_start:
+        p = np.argmax(normalized_ecg[p_start:p_end]) + p_start
+        p_peaks.append(p)
+
+    # --- T wave: largest peak in post-QRS window ---
+    t_start = min(len(normalized_ecg), r + ms(T_START_MS))
+    t_end   = min(len(normalized_ecg), r + ms(T_END_MS))
+    if t_end > t_start:
+        t = np.argmax(normalized_ecg[t_start:t_end]) + t_start
+        t_peaks.append(t)
+
+# =========================================================
+# STEP 11 — VISUALIZE PQRST WAVES (with proper labels)
+# =========================================================
+
+START = 1000
+END   = 3000
+
+def get_visible(peaks, start, end):
+    arr = np.array(peaks)
+    return arr[(arr >= start) & (arr < end)]
+
+visible_r = get_visible(r_peaks, START, END)
+visible_q = get_visible(q_peaks, START, END)
+visible_s = get_visible(s_peaks, START, END)
+visible_p = get_visible(p_peaks, START, END)
+visible_t = get_visible(t_peaks, START, END)
+
+plt.figure(figsize=(15, 6))
+
+plt.plot(
+    range(START, END),
+    normalized_ecg[START:END],
+    color='black',
+    linewidth=0.8,
+    label='ECG'
+)
+
+# Wave markers + text annotations on the graph
+wave_config = [
+    (visible_p, 'P', 'blue',   '^',  0.08),
+    (visible_q, 'Q', 'green',  'v', -0.09),
+    (visible_r, 'R', 'red',    '^',  0.08),
+    (visible_s, 'S', 'purple', 'v', -0.09),
+    (visible_t, 'T', 'orange', '^',  0.08),
+]
+
+for peaks, label, color, marker, offset in wave_config:
+
+    if len(peaks) == 0:
+        continue
+
+    yvals = normalized_ecg[peaks]
+
+    plt.scatter(
+        peaks, yvals,
+        color=color, s=60, marker=marker,
+        zorder=5, label=f'{label} Wave'
+    )
+
+    # Annotate every other beat to avoid clutter
+    for i, (px, py) in enumerate(zip(peaks, yvals)):
+        if i % 2 == 0:
+            plt.annotate(
+                label,
+                xy=(px, py),
+                xytext=(px, py + offset),
+                ha='center',
+                fontsize=9,
+                fontweight='bold',
+                color=color,
+                arrowprops=dict(arrowstyle='-', color=color, lw=0.8)
+            )
+
+plt.title("PQRST Wave Detection")
+plt.xlabel("Samples")
+plt.ylabel("Normalized Amplitude")
+plt.legend()
+plt.grid(alpha=0.3)
+
+plt.savefig("plots/pqrst_detection.png")
+
+plt.show()
+
+# =========================================================
+# STEP 12 — SINGLE BEAT ZOOM (one clean PQRST complex)
+# =========================================================
+
+# Pick the 3rd R peak for a clean example
+BEAT_IDX = 2
+
+r_center = r_peaks[BEAT_IDX]
+zoom_s   = max(0, r_center - int(0.3 * fs))
+zoom_e   = min(len(normalized_ecg), r_center + int(0.4 * fs))
+
+plt.figure(figsize=(10, 5))
+
+plt.plot(
+    range(zoom_s, zoom_e),
+    normalized_ecg[zoom_s:zoom_e],
+    color='black',
+    linewidth=1.5
+)
+
+# Label each wave for this beat
+single_waves = {
+    'P': (p_peaks[BEAT_IDX] if BEAT_IDX < len(p_peaks) else None, 'blue'),
+    'Q': (q_peaks[BEAT_IDX] if BEAT_IDX < len(q_peaks) else None, 'green'),
+    'R': (r_peaks[BEAT_IDX],                                       'red'),
+    'S': (s_peaks[BEAT_IDX] if BEAT_IDX < len(s_peaks) else None, 'purple'),
+    'T': (t_peaks[BEAT_IDX] if BEAT_IDX < len(t_peaks) else None, 'orange'),
+}
+
+for name, (idx, color) in single_waves.items():
+
+    if idx is None:
+        continue
+
+    yval   = normalized_ecg[idx]
+    offset = 0.12 if name in ('P', 'R', 'T') else -0.12
+
+    plt.scatter([idx], [yval], color=color, s=100, zorder=5)
+
+    plt.annotate(
+        name,
+        xy=(idx, yval),
+        xytext=(idx, yval + offset),
+        ha='center',
+        fontsize=13,
+        fontweight='bold',
+        color=color,
+        arrowprops=dict(arrowstyle='->', color=color, lw=1.2)
+    )
+
+plt.title("Single Beat — PQRST Complex")
+plt.xlabel("Samples")
+plt.ylabel("Normalized Amplitude")
+plt.grid(alpha=0.3)
+
+plt.savefig("plots/single_beat_pqrst.png")
+
+plt.show()
+
+# =========================================================
+# STEP 13 — HEARTBEAT SEGMENTATION
+# =========================================================
+
+WINDOW_BEFORE = 128
+WINDOW_AFTER  = 128
+WINDOW_SIZE   = WINDOW_BEFORE + WINDOW_AFTER   # FIX: was undefined before
+
+X = []
+y = []
+
+valid_labels = ['N', 'V', 'A', 'L', 'R']
+
+for i in range(len(annotation.sample)):
+
+    r_peak = annotation.sample[i]
+    label = annotation.symbol[i]
+
+    if label not in valid_labels:
+        continue
+
+    start = r_peak - WINDOW_BEFORE
+    end = r_peak + WINDOW_AFTER
+
+    if start < 0 or end > len(normalized_ecg):
+        continue
+
+    beat = normalized_ecg[start:end]
+
+    X.append(beat)
+    y.append(label)
+
+X = np.array(X)
+y = np.array(y)
+
+print("Dataset Shape:", X.shape)
+print("Labels Shape:", y.shape)
+
+# =========================================================
+# STEP 14 — SAVE DATASET
+# =========================================================
+
+np.save("outputs/X.npy", X)
+np.save("outputs/y.npy", y)
+
+print("Dataset Saved!")
+
+# =========================================================
+# STEP 15 — ECG SEGMENTATION
+# =========================================================
 
 segments = []
 
@@ -230,7 +506,7 @@ segments = np.array(segments)
 print("Segments Shape:", segments.shape)
 
 # =========================================================
-# STEP 10 — SAVE SEGMENTS
+# STEP 16 — SAVE SEGMENTS
 # =========================================================
 
 np.save("outputs/ecg_segments.npy", segments)
@@ -238,7 +514,7 @@ np.save("outputs/ecg_segments.npy", segments)
 print("ECG Segments Saved!")
 
 # =========================================================
-# STEP 11 — COMPARISON PLOT
+# STEP 17 — COMPARISON PLOT
 # =========================================================
 
 plt.figure(figsize=(15,10))
@@ -273,12 +549,19 @@ print("\n====================================")
 print("ECG PREPROCESSING COMPLETE")
 print("====================================")
 print("Generated Files:")
-print("1. raw_ecg.png")
-print("2. fft_ecg.png")
-print("3. bandpass_ecg.png")
-print("4. notch_ecg.png")
-print("5. wavelet_ecg.png")
-print("6. normalized_ecg.png")
-print("7. comparison_ecg.png")
-print("8. ecg_segments.npy")
+print("1.  raw_ecg.png")
+print("2.  fft_ecg.png")
+print("3.  bandpass_ecg.png")
+print("4.  notch_ecg.png")
+print("5.  wavelet_ecg.png")
+print("6.  normalized_ecg.png")
+print("7.  r_peaks.png")
+print("8.  pqrst_detection.png")
+print("9.  single_beat_pqrst.png")
+print("10. comparison_ecg.png")
+print("====================================")
+print("Saved Arrays:")
+print("1. outputs/X.npy")
+print("2. outputs/y.npy")
+print("3. outputs/ecg_segments.npy")
 print("====================================")

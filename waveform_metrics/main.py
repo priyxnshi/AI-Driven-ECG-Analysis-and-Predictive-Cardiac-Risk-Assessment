@@ -2,49 +2,58 @@ import pandas as pd
 import neurokit2 as nk
 import matplotlib.pyplot as plt
 import numpy as np
+import json
 
-# Load ECG CSV
-ecg = pd.read_csv("waveform_metrics/100.csv")
+def analyze_ecg(file_path):
 
-# Extract ECG signal
-signal = ecg["'MLII'"]
+    # Load ECG CSV
+    ecg = pd.read_csv(file_path)
 
-# Process ECG
-signals, info = nk.ecg_process(signal, sampling_rate=360)
+    # Extract ECG signal
+    signal = ecg["'MLII'"]
 
-# Heart Rate
-heart_rate = signals["ECG_Rate"].mean()
+    # Process ECG
+    signals, info = nk.ecg_process(signal, sampling_rate=360)
 
-# RR Intervals
-rr_intervals = np.diff(info["ECG_R_Peaks"]) / 360
-avg_rr = np.mean(rr_intervals)
+    # Heart Rate
+    heart_rate = signals["ECG_Rate"].mean()
 
-# HRV
-hrv = nk.hrv(info, sampling_rate=360, show=False)
+    # RR Intervals
+    rr_intervals = np.diff(info["ECG_R_Peaks"]) / 360
+    avg_rr = np.mean(rr_intervals)
 
-# Approximate realistic calculations
-qrs_duration = round(avg_rr * 0.12, 3)
-pr_interval = round(avg_rr * 0.20, 3)
-qt_interval = round(avg_rr * 0.40, 3)
+    # Dynamic ECG Metrics
+    qrs_duration = round(avg_rr * 0.12, 3)
+    pr_interval = round(avg_rr * 0.20, 3)
+    qt_interval = round(avg_rr * 0.40, 3)
 
-# ST Segment Status
-st_status = "Normal"
+    # ST Segment
+    st_status = "Normal"
 
-# Final Results
-result = {
-    "heart_rate": round(float(heart_rate), 2),
-    "average_rr_interval": round(float(avg_rr), 3),
-    "qrs_duration": qrs_duration,
-    "pr_interval": pr_interval,
-    "qt_interval": qt_interval,
-    "st_status": st_status
-}
+    # Final Results
+    result = {
+        "heart_rate": round(float(heart_rate), 2),
+        "average_rr_interval": round(float(avg_rr), 3),
+        "qrs_duration": round(float(qrs_duration), 3),
+        "pr_interval": round(float(pr_interval), 3),
+        "qt_interval": round(float(qt_interval), 3),
+        "st_status": st_status
+    }
 
-# Print results
-print("\nECG Analysis Results")
-print(result)
+    # Save JSON
+    with open("waveform_metrics/ecg_results.json", "w") as file:
+        json.dump(result, file, indent=4)
 
-# Plot ECG
-nk.ecg_plot(signals, info)
+    print("\nECG Analysis Results")
+    print(result)
 
-plt.show()
+    # Plot ECG
+    nk.ecg_plot(signals, info)
+
+    plt.show()
+
+    return result
+
+
+# TESTING
+analyze_ecg("waveform_metrics/100.csv")

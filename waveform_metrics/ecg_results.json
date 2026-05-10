@@ -1,0 +1,8 @@
+{
+    "heart_rate": 75.52,
+    "average_rr_interval": 0.795,
+    "qrs_duration": 0.095,
+    "pr_interval": 0.159,
+    "qt_interval": 0.318,
+    "st_status": "Normal"
+}

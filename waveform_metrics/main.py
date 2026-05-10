@@ -10,7 +10,10 @@ def analyze_ecg(file_path):
     ecg = pd.read_csv(file_path)
 
     # Extract ECG signal
-    signal = ecg["'MLII'"]
+    # Automatically detect ECG signal column
+    signal_column = ecg.columns[1]
+
+    signal = ecg[signal_column]
 
     # Process ECG
     signals, info = nk.ecg_process(signal, sampling_rate=360)

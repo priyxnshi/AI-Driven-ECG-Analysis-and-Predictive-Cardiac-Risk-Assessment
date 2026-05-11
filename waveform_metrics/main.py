@@ -25,10 +25,20 @@ def analyze_ecg(file_path):
     rr_intervals = np.diff(info["ECG_R_Peaks"]) / 360
     avg_rr = np.mean(rr_intervals)
 
+    # HRV Analysis
+    hrv = nk.hrv(info, sampling_rate=360, show=False)
+
+    # HRV Score
+    hrv_score = round(float(hrv["HRV_SDNN"].iloc[0]), 2)
+
+    # R Peak Count
+    r_peak_count = len(info["ECG_R_Peaks"])
+
     # Dynamic ECG Metrics
     qrs_duration = round(avg_rr * 0.12, 3)
     pr_interval = round(avg_rr * 0.20, 3)
     qt_interval = round(avg_rr * 0.40, 3)
+    qtc_interval = round(qt_interval / np.sqrt(avg_rr), 3)
 
     # ST Segment
     st_status = "Normal"
@@ -48,7 +58,10 @@ def analyze_ecg(file_path):
         "qrs_duration": round(float(qrs_duration), 3),
         "pr_interval": round(float(pr_interval), 3),
         "qt_interval": round(float(qt_interval), 3),
-        "st_status": st_status
+        "st_status": st_status,
+        "qtc_interval": qtc_interval,
+        "hrv_score": hrv_score,
+        "r_peak_count": r_peak_count
     }
 
     # Save JSON

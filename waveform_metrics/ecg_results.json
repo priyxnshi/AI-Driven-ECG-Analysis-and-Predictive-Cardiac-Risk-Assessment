@@ -5,5 +5,8 @@
     "qrs_duration": 0.095,
     "pr_interval": 0.159,
     "qt_interval": 0.318,
-    "st_status": "Normal"
+    "st_status": "Normal",
+    "qtc_interval": 0.357,
+    "hrv_score": 37.72,
+    "r_peak_count": 2271
 }

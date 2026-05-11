@@ -1,5 +1,6 @@
 {
     "heart_rate": 75.52,
+    "heart_rate_status": "Normal Heart Rate",
     "average_rr_interval": 0.795,
     "qrs_duration": 0.095,
     "pr_interval": 0.159,

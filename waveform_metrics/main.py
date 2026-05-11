@@ -32,10 +32,18 @@ def analyze_ecg(file_path):
 
     # ST Segment
     st_status = "Normal"
+    # Heart Rate Interpretation
+    if heart_rate < 60:
+     heart_rate_status = "Bradycardia (Low Heart Rate)"
+    elif heart_rate > 100:
+     heart_rate_status = "Tachycardia (High Heart Rate)"
+    else:
+     heart_rate_status = "Normal Heart Rate"
 
     # Final Results
     result = {
         "heart_rate": round(float(heart_rate), 2),
+        "heart_rate_status": heart_rate_status,
         "average_rr_interval": round(float(avg_rr), 3),
         "qrs_duration": round(float(qrs_duration), 3),
         "pr_interval": round(float(pr_interval), 3),

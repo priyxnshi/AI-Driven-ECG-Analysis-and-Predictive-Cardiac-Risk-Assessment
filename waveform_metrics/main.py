@@ -17,6 +17,13 @@ def analyze_ecg(file_path):
 
     # Process ECG
     signals, info = nk.ecg_process(signal, sampling_rate=360)
+    # Detect ECG Peaks
+    _, waves_peak = nk.ecg_delineate(
+    signal,
+    info["ECG_R_Peaks"],
+    sampling_rate=360,
+    method="dwt"
+    )
 
     # Heart Rate
     heart_rate = signals["ECG_Rate"].mean()
@@ -33,6 +40,10 @@ def analyze_ecg(file_path):
 
     # R Peak Count
     r_peak_count = len(info["ECG_R_Peaks"])
+    
+    p_peak_count = len([x for x in waves_peak["ECG_P_Peaks"] if not np.isnan(x)])
+
+    t_peak_count = len([x for x in waves_peak["ECG_T_Peaks"] if not np.isnan(x)])
 
     # Dynamic ECG Metrics
     qrs_duration = round(avg_rr * 0.12, 3)
@@ -61,7 +72,9 @@ def analyze_ecg(file_path):
         "st_status": st_status,
         "qtc_interval": qtc_interval,
         "hrv_score": hrv_score,
-        "r_peak_count": r_peak_count
+        "r_peak_count": r_peak_count,
+        "p_peak_count": p_peak_count,
+        "t_peak_count": t_peak_count
     }
 
     # Save JSON

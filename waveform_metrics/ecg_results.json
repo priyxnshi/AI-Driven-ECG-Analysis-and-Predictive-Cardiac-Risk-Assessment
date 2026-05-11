@@ -8,5 +8,7 @@
     "st_status": "Normal",
     "qtc_interval": 0.357,
     "hrv_score": 37.72,
-    "r_peak_count": 2271
+    "r_peak_count": 2271,
+    "p_peak_count": 2271,
+    "t_peak_count": 2219
 }

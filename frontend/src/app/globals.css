@@ -1,0 +1,156 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: #FFFFFF;
+  --color-foreground: #1A1C1E;
+  --color-primary: #0052CC;
+  --color-primary-hover: #003D99;
+  --color-primary-light: #E6F0FF;
+  --color-surface: #F4F7F9;
+  --color-surface-hover: #EBF0F4;
+  --color-success: #1DB954;
+  --color-success-light: #E8F8EE;
+  --color-alert: #D32F2F;
+  --color-alert-light: #FDECEC;
+  --color-warning: #E6A817;
+  --color-warning-light: #FFF8E6;
+  --color-border: #E0E4E8;
+  --color-border-strong: #C8CDD3;
+  --color-text-primary: #1A1C1E;
+  --color-text-secondary: #5A6068;
+  --color-text-tertiary: #8A9098;
+
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Roboto Mono', ui-monospace, monospace;
+
+  --animate-duration-fast: 150ms;
+}
+
+/* ── Base Reset ─────────────────────────────────────── */
+* {
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-x: hidden;
+}
+
+/* ── Scrollbar (Clinical Thin) ──────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-surface);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-tertiary);
+}
+
+/* ── Selection ──────────────────────────────────────── */
+::selection {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+/* ── Severity Dot Utility ───────────────────────────── */
+.severity-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.severity-dot-normal { background: var(--color-success); }
+.severity-dot-borderline { background: var(--color-warning); }
+.severity-dot-abnormal { background: var(--color-alert); }
+
+/* ── Mono Value ─────────────────────────────────────── */
+.mono-value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* ── ECG Canvas Container ───────────────────────────── */
+.ecg-canvas-container {
+  cursor: grab;
+  user-select: none;
+}
+
+.ecg-canvas-container:active {
+  cursor: grabbing;
+}
+
+/* ── Skeleton Loading ───────────────────────────────── */
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 0.3; }
+}
+
+.skeleton {
+  background: var(--color-surface);
+  border-radius: 4px;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+/* ── Progressive Reveal ─────────────────────────────── */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 300ms cubic-bezier(0.2, 0, 0, 1) forwards;
+  opacity: 0;
+}
+
+/* ── Gauge animation ────────────────────────────────── */
+@keyframes gaugeGrow {
+  from { width: 0; }
+}
+
+.animate-gauge {
+  animation: gaugeGrow 800ms cubic-bezier(0.2, 0, 0, 1) forwards;
+}
+
+/* ── Upload Zone dashed border animation ────────────── */
+@keyframes dashOffset {
+  to { stroke-dashoffset: -12; }
+}
+
+/* ── Confidence bar fill ────────────────────────────── */
+@keyframes fillBar {
+  from { width: 0; }
+}
+
+.animate-fill-bar {
+  animation: fillBar 600ms cubic-bezier(0.2, 0, 0, 1) forwards;
+}

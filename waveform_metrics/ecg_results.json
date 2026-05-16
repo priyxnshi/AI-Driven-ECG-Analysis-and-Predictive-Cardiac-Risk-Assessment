@@ -1,0 +1,14 @@
+{
+    "heart_rate": 75.52,
+    "heart_rate_status": "Normal Heart Rate",
+    "average_rr_interval": 0.795,
+    "qrs_duration": 0.095,
+    "pr_interval": 0.159,
+    "qt_interval": 0.318,
+    "st_status": "Normal",
+    "qtc_interval": 0.357,
+    "hrv_score": 37.72,
+    "r_peak_count": 2271,
+    "p_peak_count": 2271,
+    "t_peak_count": 2219
+}

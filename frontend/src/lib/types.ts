@@ -76,6 +76,9 @@ export interface AnalysisResult {
   qrsDuration: number;
   qtInterval: number;
   qtcInterval: number;
+  hrv?: number;
+  stStatus?: string;
+  heartRateStatus?: string;
 }
 
 /* ── API Types ───────────────────────────────────────── */

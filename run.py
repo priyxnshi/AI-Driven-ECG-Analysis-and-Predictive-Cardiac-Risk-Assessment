@@ -9,11 +9,11 @@ import time
 import os
 
 print("=" * 70)
-print("🚀 ECGenius - AI-Driven ECG Analysis System")
+print("ECGenius - AI-Driven ECG Analysis System")
 print("=" * 70)
 
 # Start backend
-print("\n📊 Starting Backend Server (Port 8000)...")
+print("\nStarting Backend Server (Port 8000)...")
 print("-" * 70)
 
 backend_process = subprocess.Popen(
@@ -25,23 +25,21 @@ backend_process = subprocess.Popen(
 time.sleep(3)
 
 # Start frontend
-print("\n🎨 Starting Frontend Server (Port 3000)...")
+print("\nStarting Frontend Server (Port 3000)...")
 print("-" * 70)
 
 frontend_process = subprocess.Popen(
     ['npm', 'run', 'dev'],
     cwd=os.path.join(os.getcwd(), 'frontend'),
-    stdout=subprocess.PIPE,
-    stderr=subprocess.PIPE
+    shell=True
 )
 
 print("\n" + "=" * 70)
-print("✨ SYSTEM READY!")
+print("SYSTEM READY!")
 print("=" * 70)
-print("\n📱 Frontend:   http://localhost:3000")
-print("📊 Backend:    http://localhost:8000")
-print("📈 API Docs:   http://localhost:8000/api/models")
-print("\n🛑 Press Ctrl+C to stop all services\n")
+print("\nFrontend:   http://localhost:3000")
+print("Backend:    http://localhost:8000")
+print("\nPress Ctrl+C to stop all services\n")
 print("=" * 70)
 
 try:
@@ -49,16 +47,16 @@ try:
         time.sleep(1)
         # Check if processes are still running
         if backend_process.poll() is not None:
-            print("⚠️  Backend process exited!")
+            print("Backend process exited!")
             break
         if frontend_process.poll() is not None:
-            print("⚠️  Frontend process exited!")
+            print("Frontend process exited!")
             break
 except KeyboardInterrupt:
-    print("\n\n🛑 Shutting down services...")
+    print("\n\nShutting down services...")
     backend_process.terminate()
     frontend_process.terminate()
     time.sleep(1)
     backend_process.kill()
     frontend_process.kill()
-    print("✅ Services stopped.")
+    print("Services stopped.")

@@ -21,44 +21,59 @@ export default function Home() {
     setErrorMessage('');
 
     try {
-      if (file.category === 'visual-scan') {
-        // ── Real image processing pipeline ──
-        setProcessingStatus('Loading image processor...');
-        const { processECGImage } = await import('@/lib/image-processor');
-        const { analyzeWaveform } = await import('@/lib/signal-analyzer');
+      setProcessingStatus('Uploading ECG file to clinical server...');
+      const { uploadFile, startAnalysis, getAnalysisStatus, getAnalysisResults } = await import('@/lib/api');
+      
+      // 1. Upload file
+      const uploadResp = await uploadFile(file.file, (progress) => {
+        setProcessingStatus(`Uploading ECG file... (${Math.round(progress)}%)`);
+      });
 
-        const processed = await processECGImage(file.file, (p) => {
-          setProcessingStatus(p.step);
-        });
+      setProcessingStatus('Initializing clinical neural analysis...');
+      
+      // 2. Start analysis
+      const { analysisId } = await startAnalysis(uploadResp.fileId);
 
-        setProcessingStatus('Analyzing rhythm...');
-        const result = analyzeWaveform(processed.waveform, patientData);
-        setAnalysisResult(result);
+      // 3. Poll analysis status
+      let attempts = 0;
+      const maxAttempts = 60; // 30 seconds max polling
+      let statusComplete = false;
 
-      } else if (file.category === 'digital-signal') {
-        // ── CSV / signal file parsing ──
-        const ext = file.name.toLowerCase().split('.').pop();
-        if (ext === 'csv') {
-          setProcessingStatus('Parsing CSV data...');
-          const { parseCSVFile } = await import('@/lib/csv-parser');
-          const { analyzeWaveform } = await import('@/lib/signal-analyzer');
-
-          const waveform = await parseCSVFile(file.file);
-          setProcessingStatus('Analyzing rhythm...');
-          const result = analyzeWaveform(waveform, patientData);
-          setAnalysisResult(result);
+      while (attempts < maxAttempts && !statusComplete) {
+        attempts++;
+        setProcessingStatus(`Analyzing waveform metrics... (step ${attempts})`);
+        
+        const statusResp = await getAnalysisStatus(analysisId);
+        
+        if (statusResp.status === 'complete') {
+          statusComplete = true;
+        } else if (statusResp.status === 'error') {
+          throw new Error(statusResp.currentStep || 'Backend analysis error');
         } else {
-          // XML/EDF — use mock for now (needs backend)
-          setProcessingStatus('Processing signal data...');
-          const { generateMockResult, getNextCondition } = await import('@/lib/ecg-utils');
-          await new Promise(r => setTimeout(r, 800));
-          setAnalysisResult(generateMockResult(getNextCondition()));
+          setProcessingStatus(statusResp.currentStep || 'Analyzing ECG signals...');
+          await new Promise((r) => setTimeout(r, 800)); // wait 800ms between polls
         }
-
-      } else {
-        // ── PDF — needs backend OCR pipeline ──
-        throw new Error('DOCUMENT_NOT_SUPPORTED: PDF and Document parsing requires the backend OCR pipeline. Please upload an image (.jpg/.png) or raw signal (.csv).');
       }
+
+      if (!statusComplete) {
+        throw new Error('Analysis timed out. Please try again.');
+      }
+
+      setProcessingStatus('Compiling report findings...');
+      
+      // 4. Fetch final analysis results
+      const result = await getAnalysisResults(analysisId);
+      
+      // Set patient metadata on results based on inputs
+      if (result.patient) {
+        result.patient.name = patientData.name && patientData.name !== 'Uploaded Scan' ? patientData.name : result.patient.name;
+        result.patient.age = patientData.age ? parseInt(patientData.age) : result.patient.age;
+        result.patient.sex = patientData.sex || result.patient.sex;
+        result.patient.referenceId = patientData.referenceId || result.patient.referenceId;
+      }
+      
+      setAnalysisResult(result);
+
     } catch (err: unknown) {
       console.error('Processing error:', err);
       setErrorMessage(err instanceof Error ? err.message : 'An unknown error occurred during processing.');

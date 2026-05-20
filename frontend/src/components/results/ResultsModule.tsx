@@ -112,16 +112,19 @@ export default function ResultsModule({ result, onNewAnalysis }: ResultsModulePr
         </div>
 
         {/* ── Key Metrics ──────────────────────────────────── */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-6">
           {[
             { icon: <Heart className="w-3.5 h-3.5" />, label: 'Heart Rate', value: result.heartRate, unit: 'BPM' },
             { icon: <Clock className="w-3.5 h-3.5" />, label: 'R-R Interval', value: result.rrInterval, unit: 'ms' },
             { icon: <Activity className="w-3.5 h-3.5" />, label: 'QRS Duration', value: result.qrsDuration, unit: 'ms' },
             { icon: <FileText className="w-3.5 h-3.5" />, label: 'QTc Interval', value: result.qtcInterval, unit: 'ms' },
+            { icon: <Clock className="w-3.5 h-3.5" />, label: 'PR Interval', value: result.prInterval, unit: 'ms' },
+            { icon: <Activity className="w-3.5 h-3.5" />, label: 'HRV (SDNN)', value: result.hrv ?? '--', unit: 'ms' },
+            { icon: <FileText className="w-3.5 h-3.5" />, label: 'ST Status', value: result.stStatus ?? 'Normal', unit: '' },
           ].map((metric) => (
             <div
               key={metric.label}
-              className="border border-border rounded-lg bg-white p-3"
+              className="border border-border rounded-lg bg-white p-3 hover:border-primary/30 transition-colors"
             >
               <div className="flex items-center gap-1.5 mb-2">
                 <span className="text-text-tertiary">{metric.icon}</span>

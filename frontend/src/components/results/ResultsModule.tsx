@@ -6,6 +6,15 @@ import FindingCard from './FindingCard';
 import ReportActions from './ReportActions';
 import { FileText, Heart, Clock, Activity } from 'lucide-react';
 
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+} from 'recharts';
+
 interface ResultsModuleProps {
   result: AnalysisResult;
   onNewAnalysis: () => void;
@@ -39,6 +48,14 @@ const severityConfig: Record<SeverityLevel, {
 
 export default function ResultsModule({ result, onNewAnalysis }: ResultsModuleProps) {
   const severity = severityConfig[result.overallSeverity];
+
+  const waveformData =
+  result.waveform?.leads?.[0]?.samples?.slice(0, 1000).map(
+    (value: number, index: number) => ({
+      index,
+      value,
+    })
+  ) || [];
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -136,7 +153,30 @@ export default function ResultsModule({ result, onNewAnalysis }: ResultsModulePr
             </div>
           ))}
         </div>
+        
+        {/* ── ECG Waveform ─────────────────────────────────── */}
+        <div className="border border-border rounded-lg bg-white p-5 mb-6">
+         <h2 className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-4">
+          ECG Waveform
+        </h2>
 
+        <div style={{ width: '100%', height: 300 }}>
+         <ResponsiveContainer>
+          <LineChart data={waveformData}>
+           <XAxis dataKey="index" hide />
+           <YAxis hide />
+           <Tooltip />
+           <Line
+            type="monotone"
+            dataKey="value"
+            stroke="#2563eb"
+            dot={false}
+            strokeWidth={1.5}
+           />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
         {/* ── Findings ─────────────────────────────────────── */}
         <div className="mb-8">
           <h2 className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">

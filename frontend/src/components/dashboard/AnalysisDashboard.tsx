@@ -39,7 +39,9 @@ export default function AnalysisDashboard({ result, onViewResults, processingSta
 
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
   }, [result]);
-
+  
+  console.log("RESULT:", result);
+  console.log("WAVEFORM:", result?.waveform);
   const statusText = !result
     ? (processingStatus || 'Processing ECG recording...')
     : analysisComplete
@@ -73,10 +75,27 @@ export default function AnalysisDashboard({ result, onViewResults, processingSta
 
       {/* Three-column layout */}
       <div className="flex-1 flex min-h-0">
-        <PatientSidebar patient={showPatient ? result?.patient || null : null} isLoading={!showPatient} />
-        <ECGCanvas waveform={showWaveform ? result?.waveform || null : null} isLoading={!showWaveform} />
-        <DetectedPatterns findings={showFindings ? result?.findings || null : null} isLoading={!showFindings} />
-      </div>
+  <div className="w-64 flex-shrink-0">
+    <PatientSidebar
+      patient={showPatient ? result?.patient || null : null}
+      isLoading={!showPatient}
+    />
+  </div>
+
+  <div className="flex-1 min-w-0">
+    <ECGCanvas
+      waveform={showWaveform ? result?.waveform || null : null}
+      isLoading={!showWaveform}
+    />
+  </div>
+
+  <div className="w-80 flex-shrink-0">
+    <DetectedPatterns
+      findings={showFindings ? result?.findings || null : null}
+      isLoading={!showFindings}
+    />
+  </div>
+</div>
     </div>
   );
 }

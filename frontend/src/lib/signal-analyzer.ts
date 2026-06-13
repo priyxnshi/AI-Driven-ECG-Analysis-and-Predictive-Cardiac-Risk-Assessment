@@ -8,6 +8,7 @@ export function analyzeWaveform(waveform: WaveformData, patientData?: PatientInp
   if (!primaryLead) return buildFallbackResult(waveform);
 
   const peaks = detectRPeaks(primaryLead.samples, waveform.sampleRate);
+  waveform.rPeaks = peaks;
   const hr = computeHeartRate(peaks, waveform.sampleRate);
   const rrIntervals = peaks.slice(1).map((p, i) => ((p - peaks[i]) / waveform.sampleRate) * 1000);
   const avgRR = rrIntervals.length > 0 ? rrIntervals.reduce((a, b) => a + b, 0) / rrIntervals.length : 833;

@@ -72,6 +72,9 @@ export default function ECGCanvas({ waveform, isLoading }: ECGCanvasProps) {
     const leadHeight = height / leadCount;
 
     leads.forEach((lead, index) => {
+      console.log("Drawing lead:", lead.name);
+      console.log("Min:", Math.min(...lead.samples));
+      console.log("Max:", Math.max(...lead.samples));
       const yCenter = leadHeight * index + leadHeight / 2;
       const yTop = leadHeight * index;
 
@@ -96,20 +99,78 @@ export default function ECGCanvas({ waveform, isLoading }: ECGCanvasProps) {
       ctx.strokeStyle = '#1A1C1E';
       ctx.lineWidth = 1.2;
       ctx.beginPath();
+      console.log("sampleRate =", data.sampleRate);
+      console.log("zoom =", zoom);
+      console.log("panX =", panX);
+      console.log("width =", width);
+      const sampleRate = data.sampleRate || 200;
 
-      const samplesPerPixel = data.sampleRate / (PIXELS_PER_SECOND * zoom);
+      const samplesPerPixel =sampleRate / (PIXELS_PER_SECOND * zoom);
       const startSample = Math.max(0, Math.floor(-panX * samplesPerPixel));
       const endSample = Math.min(lead.samples.length, Math.floor((-panX + width) * samplesPerPixel));
+      const minSample = Math.min(...lead.samples);
+      const maxSample = Math.max(...lead.samples);
+      const isRawADC = maxSample > 50;
+      console.log("samplesPerPixel =", samplesPerPixel);
+      console.log("startSample =", startSample);
+      console.log("endSample =", endSample);
 
       for (let sIdx = startSample; sIdx < endSample; sIdx++) {
-        const x = (sIdx / data.sampleRate) * PIXELS_PER_SECOND * zoom + panX;
-        const y = yCenter - lead.samples[sIdx] * PIXELS_PER_MV * zoom;
+        const x = (sIdx / sampleRate) * PIXELS_PER_SECOND * zoom + panX;
+        const sample = lead.samples[sIdx];
+
+        const normalizedSample = isRawADC
+         ? (sample - 1000) / 100
+         : sample;
+        if (sIdx === startSample) {
+         console.log("startSample:", startSample);
+         console.log("endSample:", endSample);
+         console.log("width:", width);
+        }
+        if (sIdx < 5) {
+         console.log("Sample:", lead.samples[sIdx]);
+         console.log("Normalized:", normalizedSample);
+        }
+        if (sIdx < 10) {
+         console.log("Sample:", lead.samples[sIdx]);
+        } 
+        const y = yCenter - normalizedSample * 40;
+        //const y = yCenter - normalizedSample * PIXELS_PER_MV * zoom;
         const clampedY = Math.max(yTop + 4, Math.min(yTop + leadHeight - 4, y));
 
         if (sIdx === startSample) ctx.moveTo(x, clampedY);
         else ctx.lineTo(x, clampedY);
-      }
-      ctx.stroke();
+        }
+
+ctx.strokeStyle = 'blue';
+ctx.lineWidth = 4;
+console.log("Points drawn:", endSample - startSample);
+ctx.stroke();
+//ctx.fillStyle = 'red';
+//ctx.fillRect(100, 100, 20, 20);
+if (data.rPeaks && index === 0) {
+  ctx.fillStyle = 'red';
+
+  data.rPeaks.forEach((peak) => {
+    const x =
+      (peak / sampleRate) *
+      PIXELS_PER_SECOND *
+      zoom +
+      panX;
+
+    if (x < 0 || x > width) return;
+
+    const y =
+      yCenter -
+      lead.samples[peak] *
+      PIXELS_PER_MV *
+      zoom;
+
+    ctx.beginPath();
+    ctx.arc(x, y, 4, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
     });
   }, [zoom, panX, selectedLead]);
 
@@ -134,6 +195,9 @@ export default function ECGCanvas({ waveform, isLoading }: ECGCanvasProps) {
     ctx.fillStyle = '#FEFCFC';
     ctx.fillRect(0, 0, rect.width, rect.height);
 
+    
+    console.log("Canvas width:", rect.width);
+    console.log("Canvas height:", rect.height);
     drawGrid(ctx, rect.width, rect.height);
     drawWaveform(ctx, rect.width, rect.height, waveform);
 

@@ -1,3 +1,37 @@
+print("STEP 1")
+import os
+
+print("STEP 2")
+import json
+
+print("STEP 3")
+import re
+
+print("STEP 4")
+import numpy as np
+
+print("STEP 5")
+import pandas as pd
+
+print("STEP 6")
+import neurokit2 as nk
+
+print("STEP 7")
+from flask import Flask, request, jsonify
+
+print("STEP 8")
+from flask_cors import CORS
+
+print("STEP 9")
+import PyPDF2
+
+print("STEP 10")
+import pytesseract
+
+print("STEP 11")
+from PIL import Image
+
+print("IMPORTS COMPLETE")
 """
 ECG Analysis Backend API
 Handles ECG processing, model predictions, and analysis for CSV, PDF, and Scanned Image ECG forms.
@@ -242,12 +276,21 @@ def analyze_file(file_id):
                     sampling_rate=sampling_rate, 
                     method="dwt"
                 )
+                p_peaks = [int(x) for x in waves_peak["ECG_P_Peaks"] if not np.isnan(x)]
+                q_peaks = [int(x) for x in waves_peak["ECG_Q_Peaks"] if not np.isnan(x)]
+                r_peaks = [int(x) for x in info["ECG_R_Peaks"]]
+                s_peaks = [int(x) for x in waves_peak["ECG_S_Peaks"] if not np.isnan(x)]
+                t_peaks = [int(x) for x in waves_peak["ECG_T_Peaks"] if not np.isnan(x)]
                 p_peak_count = len([x for x in waves_peak["ECG_P_Peaks"] if not np.isnan(x)])
                 t_peak_count = len([x for x in waves_peak["ECG_T_Peaks"] if not np.isnan(x)])
             except Exception:
                 p_peak_count = len(info["ECG_R_Peaks"])
                 t_peak_count = len(info["ECG_R_Peaks"])
-                
+                p_peaks = []
+                q_peaks = []
+                r_peaks = [int(x) for x in info["ECG_R_Peaks"]]
+                s_peaks = []
+                t_peaks = []
             # HR & RR calculation
             heart_rate = float(signals["ECG_Rate"].mean())
             rr_intervals = np.diff(info["ECG_R_Peaks"]) / sampling_rate
@@ -483,7 +526,13 @@ def analyze_file(file_id):
             'waveform': {
                 'samplingRate': 360 if detected_type == 'digital-signal' else 250,
                 'duration': 10.0,
-                'leads': leads
+                'leads': leads,
+
+                'pPeaks': p_peaks if detected_type == 'digital-signal' else [],
+                'qPeaks': q_peaks if detected_type == 'digital-signal' else [],
+                'rPeaks': r_peaks if detected_type == 'digital-signal' else [],
+                'sPeaks': s_peaks if detected_type == 'digital-signal' else [],
+                'tPeaks': t_peaks if detected_type == 'digital-signal' else []
             },
             'overallSeverity': overall_severity,
             'severityScore': severity_score,

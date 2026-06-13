@@ -43,7 +43,13 @@ export interface LeadData {
 export interface WaveformData {
   sampleRate: number;
   leads: LeadData[];
-  duration: number; // seconds
+  duration: number;
+
+  rPeaks?: number[];
+  pPeaks?: number[];
+  qPeaks?: number[];
+  sPeaks?: number[];
+  tPeaks?: number[];
 }
 
 /* ── Analysis Findings ───────────────────────────────── */

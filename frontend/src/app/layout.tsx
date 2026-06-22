@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Roboto_Mono } from "next/font/google";
 import "./globals.css";
-import Sidebar from "@/components/ui/Sidebar";
+import AuthWrapper from "@/components/ui/AuthWrapper";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -41,14 +41,12 @@ export default function RootLayout({
       data-scroll-behavior="smooth"
       className={`${inter.variable} ${robotoMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-background text-foreground font-sans h-screen overflow-hidden">
-        <div className="flex h-full w-full">
-          <Sidebar />
-          <div className="flex-1 flex flex-col min-w-0">
-            {children}
-          </div>
-        </div>
+      <body className="flex flex-col bg-background text-foreground font-sans min-h-screen">
+        <AuthWrapper>
+          {children}
+        </AuthWrapper>
       </body>
     </html>
   );
 }
+

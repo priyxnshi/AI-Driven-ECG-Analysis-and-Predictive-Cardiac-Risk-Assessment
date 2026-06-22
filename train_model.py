@@ -49,9 +49,9 @@ print("📦 STEP 1: Loading Dataset...")
 print("-" * 70)
 
 try:
-    X = np.load("outputs/X.npy")   # Shape: (beats, 256)
-    y = np.load("outputs/y.npy")   # Shape: (beats,)  labels: N V A L R
-    print(f"✅ Data loaded successfully!")
+    X = np.load("outputs/X.npy")[::10]   # Shape: (beats, 256)
+    y = np.load("outputs/y.npy")[::10]   # Shape: (beats,)  labels: N V A L R
+    print(f"✅ Data loaded successfully (10% subset)!")
     print(f"   X shape: {X.shape} (beats, samples)")
     print(f"   y shape: {y.shape} (beats,)")
 except FileNotFoundError:
@@ -190,14 +190,14 @@ print("-" * 70)
 
 callbacks = [
     EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True),
-    ModelCheckpoint('models/best_model.keras', monitor='val_accuracy', save_best_only=True),
+    ModelCheckpoint('models/best_model.h5', monitor='val_accuracy', save_best_only=True),
     ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=3, min_lr=1e-6)
 ]
 
 history = model.fit(
     X_train, y_train,
     batch_size=32,
-    epochs=50,
+    epochs=3,
     validation_split=0.2,
     class_weight=class_weights_dict,
     callbacks=callbacks,
@@ -243,7 +243,7 @@ print(f"✅ Label classes saved")
 model_json = model.to_json()
 with open('models/model_architecture.json', 'w') as f:
     f.write(model_json)
-print(f"✅ Model saved to: models/best_model.keras")
+print(f"✅ Model saved to: models/best_model.h5")
 
 # =========================================================
 # STEP 9 — GENERATE PLOTS
@@ -297,7 +297,7 @@ print(f"\n📊 Summary:")
 print(f"   Model:     CNN-LSTM")
 print(f"   Accuracy:  {test_accuracy*100:.2f}%")
 print(f"   Classes:   {', '.join(le.classes_)}")
-print(f"   Best Model: models/best_model.keras")
+print(f"   Best Model: models/best_model.h5")
 print(f"\n🚀 Model is ready for predictions!")
 print(f"   Use API: POST http://localhost:8000/api/predict")
 print("\n" + "="*70 + "\n")

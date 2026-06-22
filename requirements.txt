@@ -1,8 +1,8 @@
 wfdb==4.3.1
 numpy==1.26.4
-scipy==1.17.1
+scipy==1.15.3
 PyWavelets==1.4.1
-scikit-learn==1.8.0
+scikit-learn==1.5.2
 pandas==2.2.3
 requests==2.31.0
 flask==3.0.0
@@ -12,3 +12,8 @@ Pillow==12.2.0
 neurokit2==0.2.9
 PyPDF2>=3.0.1
 pytesseract>=0.3.13
+flask-sqlalchemy==3.1.1
+flask-migrate==4.0.7
+pyjwt==2.8.0
+reportlab==4.1.0
+tensorflow-cpu==2.14.0

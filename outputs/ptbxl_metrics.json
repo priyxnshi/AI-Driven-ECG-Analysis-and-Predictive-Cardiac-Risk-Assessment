@@ -1,0 +1,78 @@
+{
+    "overallAccuracy": 0.7454545497894287,
+    "totalTestRecords": 385,
+    "perClassMetrics": {
+        "A": {
+            "className": "PAC (Atrial)",
+            "precision": 0.782608695652174,
+            "recall": 0.6835443037974683,
+            "f1Score": 0.7297297297297297,
+            "support": 79
+        },
+        "L": {
+            "className": "LBBB",
+            "precision": 0.6947368421052632,
+            "recall": 0.7764705882352941,
+            "f1Score": 0.7333333333333333,
+            "support": 85
+        },
+        "N": {
+            "className": "Normal",
+            "precision": 0.7468354430379747,
+            "recall": 0.8939393939393939,
+            "f1Score": 0.8137931034482758,
+            "support": 66
+        },
+        "R": {
+            "className": "RBBB",
+            "precision": 0.8701298701298701,
+            "recall": 0.8589743589743589,
+            "f1Score": 0.864516129032258,
+            "support": 78
+        },
+        "V": {
+            "className": "PVC (Ventricular)",
+            "precision": 0.6307692307692307,
+            "recall": 0.5324675324675324,
+            "f1Score": 0.5774647887323944,
+            "support": 77
+        }
+    },
+    "confusionMatrix": [
+        [
+            54,
+            2,
+            12,
+            3,
+            8
+        ],
+        [
+            3,
+            66,
+            2,
+            4,
+            10
+        ],
+        [
+            4,
+            0,
+            59,
+            1,
+            2
+        ],
+        [
+            2,
+            5,
+            0,
+            67,
+            4
+        ],
+        [
+            6,
+            22,
+            6,
+            2,
+            41
+        ]
+    ]
+}

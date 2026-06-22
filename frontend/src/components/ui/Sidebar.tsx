@@ -1,19 +1,44 @@
-'use client';
-
-import { LayoutDashboard, Users, Activity, Settings, HelpCircle, FileText } from 'lucide-react';
+import { LayoutDashboard, Users, Activity, Settings, HelpCircle, FileText, LogOut, User } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const [userName, setUserName] = useState('');
+  const [userRole, setUserRole] = useState('');
 
-  const navItems = [
-    { icon: Activity, label: 'Analysis', href: '/' },
-    { icon: Users, label: 'Patients', href: '/patients' },
-    { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
-    { icon: FileText, label: 'Reports', href: '/reports' },
-  ];
+  useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const userObj = JSON.parse(userStr);
+        setUserName(userObj.username);
+        setUserRole(userObj.role);
+      } catch (e) {
+        // ignore
+      }
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.reload();
+  };
+
+  const navItems = userRole === 'patient' 
+    ? [
+        { icon: Activity, label: 'Upload ECG', href: '/' },
+        { icon: FileText, label: 'My History', href: '/reports' },
+      ]
+    : [
+        { icon: Activity, label: 'Analysis', href: '/' },
+        { icon: Users, label: 'Patients', href: '/patients' },
+        { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
+        { icon: FileText, label: 'Reports', href: '/reports' },
+      ];
 
   return (
     <aside className="w-16 lg:w-64 flex-shrink-0 bg-surface border-r border-border flex flex-col transition-all duration-300">
@@ -54,16 +79,26 @@ export default function Sidebar() {
       </nav>
 
       {/* Bottom Actions */}
-      <div className="p-2 border-t border-border mt-auto">
-        <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-secondary hover:bg-white/50 transition-colors w-full" title="Settings">
-          <Settings className="w-5 h-5 flex-shrink-0 text-text-tertiary" />
-          <span className="text-sm hidden lg:block">Settings</span>
-        </button>
-        <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-secondary hover:bg-white/50 transition-colors w-full" title="Help">
-          <HelpCircle className="w-5 h-5 flex-shrink-0 text-text-tertiary" />
-          <span className="text-sm hidden lg:block">Help & Support</span>
+      <div className="p-2 border-t border-border mt-auto space-y-1">
+        {userName && (
+          <div className="px-3 py-2 text-xs border border-border bg-white rounded-lg flex items-center gap-2 hidden lg:flex shadow-sm">
+            <User className="w-4 h-4 text-text-tertiary" />
+            <div className="min-w-0">
+              <p className="font-semibold text-text-primary truncate">{userName.toUpperCase()}</p>
+              <p className="text-[9px] text-text-tertiary uppercase font-mono">{userRole}</p>
+            </div>
+          </div>
+        )}
+        <button 
+          onClick={handleLogout}
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors w-full cursor-pointer" 
+          title="Sign Out"
+        >
+          <LogOut className="w-5 h-5 flex-shrink-0 text-red-500" />
+          <span className="text-sm font-medium hidden lg:block">Sign Out</span>
         </button>
       </div>
     </aside>
   );
 }
+

@@ -1,0 +1,41 @@
+C:\AI-Driven-ECG-Analysis-and-Predictive-Cardiac-Risk-Assessment\venv\lib\site-packages\requests\__init__.py:109: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (7.4.3)/charset_normalizer (3.4.7) doesn't match a supported version!
+  warnings.warn(
+2026-06-22 15:12:55.148988: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: SSE SSE2 SSE3 SSE4.1 SSE4.2 AVX AVX2 AVX512F AVX512_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+[ML] Loaded labels: ['A' 'L' 'N' 'R' 'V']
+[ML] Defining model architecture...
+[ML] Loading weights manually from C:\AI-Driven-ECG-Analysis-and-Predictive-Cardiac-Risk-Assessment\AI-Driven-ECG-Analysis-and-Predictive-Cardiac-Risk-Assessment\models\ecg_cnn_lstm.keras...
+[ML] Loaded model weights manually and initialized sequential predictor successfully!
+[QUEUE] Background Job Queue Manager started.
+ECG Analysis Platform Backend Starting...
+API Base: http://localhost:8000
+============================================================
+ * Serving Flask app 'backend'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8000
+ * Running on http://192.168.29.8:8000
+Press CTRL+C to quit
+127.0.0.1 - - [22/Jun/2026 15:24:32] "OPTIONS /api/dashboard/stats HTTP/1.1" 200 -
+127.0.0.1 - - [22/Jun/2026 15:24:32] "OPTIONS /api/ptbxl/metrics HTTP/1.1" 200 -
+127.0.0.1 - - [22/Jun/2026 15:24:32] "OPTIONS /api/dashboard/stats HTTP/1.1" 200 -
+127.0.0.1 - - [22/Jun/2026 15:24:32] "OPTIONS /api/ptbxl/metrics HTTP/1.1" 200 -
+127.0.0.1 - - [22/Jun/2026 15:24:33] "GET /api/ptbxl/metrics HTTP/1.1" 200 -
+127.0.0.1 - - [22/Jun/2026 15:24:35] "GET /api/ptbxl/metrics HTTP/1.1" 200 -
+C:\AI-Driven-ECG-Analysis-and-Predictive-Cardiac-Risk-Assessment\AI-Driven-ECG-Analysis-and-Predictive-Cardiac-Risk-Assessment\backend.py:749: LegacyAPIWarning: The Query.get() method is considered legacy as of the 1.x series of SQLAlchemy and becomes a legacy construct in 2.0. The method is now available as Session.get() (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+  patient = Patient.query.get(r.patient_id)
+127.0.0.1 - - [22/Jun/2026 15:24:36] "GET /api/dashboard/stats HTTP/1.1" 200 -
+127.0.0.1 - - [22/Jun/2026 15:24:37] "GET /api/dashboard/stats HTTP/1.1" 200 -
+127.0.0.1 - - [22/Jun/2026 15:24:38] "GET /api/ptbxl/confusion-matrix?t=1782122069473 HTTP/1.1" 200 -
+127.0.0.1 - - [22/Jun/2026 15:26:58] "OPTIONS /api/dashboard/stats HTTP/1.1" 200 -
+127.0.0.1 - - [22/Jun/2026 15:26:58] "GET /api/dashboard/stats HTTP/1.1" 200 -
+127.0.0.1 - - [22/Jun/2026 15:27:01] "OPTIONS /api/ptbxl/metrics HTTP/1.1" 200 -
+127.0.0.1 - - [22/Jun/2026 15:27:01] "GET /api/ptbxl/metrics HTTP/1.1" 200 -
+127.0.0.1 - - [22/Jun/2026 15:27:02] "GET /api/dashboard/stats HTTP/1.1" 200 -
+127.0.0.1 - - [22/Jun/2026 15:27:02] "GET /api/ptbxl/metrics HTTP/1.1" 200 -
+127.0.0.1 - - [22/Jun/2026 15:27:13] "GET /api/ptbxl/confusion-matrix?t=1782122212085 HTTP/1.1" 200 -
+127.0.0.1 - - [22/Jun/2026 15:27:50] "POST /api/auth/login HTTP/1.1" 200 -
+127.0.0.1 - - [22/Jun/2026 15:27:53] "GET /api/ptbxl/metrics HTTP/1.1" 200 -
+127.0.0.1 - - [22/Jun/2026 15:27:55] "GET /api/ptbxl/confusion-matrix HTTP/1.1" 200 -
+127.0.0.1 - - [22/Jun/2026 15:29:01] "POST /api/ptbxl/evaluate HTTP/1.1" 200 -

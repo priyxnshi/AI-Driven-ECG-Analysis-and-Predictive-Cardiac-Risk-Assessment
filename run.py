@@ -8,6 +8,9 @@ import sys
 import time
 import os
 
+# Get the absolute path of the directory containing run.py
+script_dir = os.path.dirname(os.path.abspath(__file__))
+
 print("=" * 70)
 print("ECGenius - AI-Driven ECG Analysis System")
 print("=" * 70)
@@ -16,9 +19,12 @@ print("=" * 70)
 print("\nStarting Backend Server (Port 8000)...")
 print("-" * 70)
 
+backend_log = open(os.path.join(script_dir, 'backend_run.log'), 'w', encoding='utf-8')
 backend_process = subprocess.Popen(
     [sys.executable, 'backend.py'],
-    cwd=os.getcwd()
+    cwd=script_dir,
+    stdout=backend_log,
+    stderr=backend_log
 )
 
 # Wait a bit for backend to start
@@ -30,7 +36,7 @@ print("-" * 70)
 
 frontend_process = subprocess.Popen(
     ['npm', 'run', 'dev'],
-    cwd=os.path.join(os.getcwd(), 'frontend'),
+    cwd=os.path.join(script_dir, 'frontend'),
     shell=True
 )
 
@@ -59,4 +65,8 @@ except KeyboardInterrupt:
     time.sleep(1)
     backend_process.kill()
     frontend_process.kill()
+    try:
+        backend_log.close()
+    except Exception:
+        pass
     print("Services stopped.")

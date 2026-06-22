@@ -1,0 +1,43 @@
+2026-06-20 22:28:34,205 - WARNING - Rejected file 'run_malware.exe': Disallowed extension: .exe
+2026-06-20 22:28:35,295 - WARNING - Rejected file 'fake_ecg.csv': Renamed file detected (PDF document signature matching .csv extension)
+2026-06-20 22:30:02,974 - WARNING - Rejected file 'run_malware.exe': Disallowed extension: .exe
+2026-06-20 22:30:03,948 - WARNING - Rejected file 'fake_ecg.csv': Renamed file detected (PDF document signature matching .csv extension)
+2026-06-20 22:30:39,335 - WARNING - Rejected file 'random.csv': CSV contains no data rows
+2026-06-20 22:30:40,264 - WARNING - Rejected file 'run_malware.exe': Disallowed extension: .exe
+2026-06-20 22:30:41,191 - WARNING - Rejected file 'fake_ecg.csv': Renamed file detected (PDF document signature matching .csv extension)
+2026-06-21 12:00:02,977 - WARNING - Rejected file 'random.csv': CSV contains no data rows
+2026-06-21 12:00:03,540 - WARNING - Rejected file 'run_malware.exe': Disallowed extension: .exe
+2026-06-21 12:00:04,011 - WARNING - Rejected file 'fake_ecg.csv': Renamed file detected (PDF document signature matching .csv extension)
+2026-06-21 12:51:54,982 - WARNING - Rejected file 'empty.csv': Zero-byte file
+2026-06-21 12:51:57,031 - WARNING - Rejected file 'renamed_pdf.csv': Renamed file detected (PDF document signature matching .csv extension)
+2026-06-21 12:51:59,072 - WARNING - Rejected file 'text.csv': Non-numeric values in CSV: row 2
+2026-06-21 12:52:01,135 - WARNING - Rejected file 'run_malware.exe': Disallowed extension: .exe
+2026-06-21 14:59:40,215 - WARNING - Rejected file 'WhatsApp Image 2026-06-21 at 2.52.12 PM (3).jpeg': Disallowed extension: .jpeg
+2026-06-21 14:59:43,830 - WARNING - Rejected file 'WhatsApp Image 2026-06-21 at 2.52.12 PM (3).jpeg': Disallowed extension: .jpeg
+2026-06-21 14:59:45,598 - WARNING - Rejected file 'WhatsApp Image 2026-06-21 at 2.52.12 PM (3).jpeg': Disallowed extension: .jpeg
+2026-06-21 14:59:46,840 - WARNING - Rejected file 'WhatsApp Image 2026-06-21 at 2.52.12 PM (3).jpeg': Disallowed extension: .jpeg
+2026-06-21 14:59:48,057 - WARNING - Rejected file 'WhatsApp Image 2026-06-21 at 2.52.12 PM (3).jpeg': Disallowed extension: .jpeg
+2026-06-21 14:59:48,821 - WARNING - Rejected file 'WhatsApp Image 2026-06-21 at 2.52.12 PM (3).jpeg': Disallowed extension: .jpeg
+2026-06-21 14:59:50,053 - WARNING - Rejected file 'WhatsApp Image 2026-06-21 at 2.52.12 PM (3).jpeg': Disallowed extension: .jpeg
+2026-06-21 14:59:51,402 - WARNING - Rejected file 'WhatsApp Image 2026-06-21 at 2.52.12 PM (3).jpeg': Disallowed extension: .jpeg
+2026-06-21 15:00:10,352 - WARNING - Rejected file 'WhatsApp Image 2026-06-21 at 2.52.13 PM (11).jpeg': Disallowed extension: .jpeg
+2026-06-21 15:00:14,174 - WARNING - Rejected file 'WhatsApp Image 2026-06-21 at 2.52.13 PM (11).jpeg': Disallowed extension: .jpeg
+2026-06-21 15:00:15,872 - WARNING - Rejected file 'WhatsApp Image 2026-06-21 at 2.52.13 PM (11).jpeg': Disallowed extension: .jpeg
+2026-06-21 15:09:20,929 - WARNING - Rejected file 'random.csv': CSV contains no data rows
+2026-06-21 15:09:21,449 - WARNING - Rejected file 'run_malware.exe': Disallowed extension: .exe
+2026-06-21 15:09:21,942 - WARNING - Rejected file 'fake_ecg.csv': Renamed file detected (PDF document signature matching .csv extension)
+2026-06-21 15:09:50,762 - WARNING - Rejected file 'random.csv': CSV contains no data rows
+2026-06-21 15:09:51,298 - WARNING - Rejected file 'run_malware.exe': Disallowed extension: .exe
+2026-06-21 15:09:51,864 - WARNING - Rejected file 'fake_ecg.csv': Renamed file detected (PDF document signature matching .csv extension)
+2026-06-21 15:10:21,643 - WARNING - Rejected file 'random.csv': CSV contains no data rows
+2026-06-21 15:10:22,149 - WARNING - Rejected file 'run_malware.exe': Disallowed extension: .exe
+2026-06-21 15:10:22,681 - WARNING - Rejected file 'fake_ecg.csv': Renamed file detected (PDF document signature matching .csv extension)
+2026-06-22 00:02:28,882 - WARNING - Rejected file 'random.csv': CSV contains no data rows
+2026-06-22 00:02:37,883 - WARNING - Rejected file 'run_malware.exe': Disallowed extension: .exe
+2026-06-22 00:02:47,483 - WARNING - Rejected file 'fake_ecg.csv': Renamed file detected (PDF document signature matching .csv extension)
+2026-06-22 00:20:34,952 - WARNING - Rejected file 'random.csv': CSV contains no data rows
+2026-06-22 00:20:35,669 - WARNING - Rejected file 'run_malware.exe': Disallowed extension: .exe
+2026-06-22 00:20:36,366 - WARNING - Rejected file 'fake_ecg.csv': Renamed file detected (PDF document signature matching .csv extension)
+2026-06-22 00:21:22,511 - WARNING - Rejected file 'random.csv': CSV contains no data rows
+2026-06-22 00:21:23,322 - WARNING - Rejected file 'run_malware.exe': Disallowed extension: .exe
+2026-06-22 00:21:24,154 - WARNING - Rejected file 'fake_ecg.csv': Renamed file detected (PDF document signature matching .csv extension)

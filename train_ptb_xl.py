@@ -62,7 +62,7 @@ def load_model():
         Dense(num_classes, activation='softmax', name='dense_1')
     ])
     
-    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.0005), loss='categorical_crossentropy', metrics=['accuracy'])
+    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.0003), loss='categorical_crossentropy', metrics=['accuracy'])
     
     # Load weights
     model_keras_path = os.path.join(MODELS_DIR, 'ecg_cnn_lstm.keras')
@@ -314,7 +314,7 @@ def run_fine_tuning():
     print("\n[INFO] Fine-tuning the network on PTB-XL beats...")
     model.fit(
         X_train, y_train,
-        epochs=15,
+        epochs=25,
         batch_size=32,
         validation_data=(X_test, y_test),
         class_weight=class_weight_dict,

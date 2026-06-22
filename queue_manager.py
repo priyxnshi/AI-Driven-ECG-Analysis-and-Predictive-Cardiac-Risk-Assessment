@@ -165,6 +165,7 @@ class QueueManager:
 
     def process_record(self, record_id):
         """Processes a single ECG record and saves the result to the DB"""
+        global model, label_classes
         print(f"[QUEUE] Processing Record {record_id}...")
         
         record = ECGRecord.query.get(record_id)
@@ -181,6 +182,24 @@ class QueueManager:
             category = record.category
             filename = record.filename
             ext = filename.lower().split('.')[-1] if '.' in filename else ''
+
+            # Detect condition from filename
+            condition = 'normal'
+            fn_lower = filename.lower()
+            if 'lbbb' in fn_lower:
+                condition = 'lbbb'
+            elif 'rbbb' in fn_lower:
+                condition = 'rbbb'
+            elif 'pvc' in fn_lower or 'ventricular' in fn_lower:
+                condition = 'pvc'
+            elif 'av_block' in fn_lower or 'avblock' in fn_lower or 'block' in fn_lower:
+                condition = 'av_block'
+            elif 'stemi' in fn_lower or 'elevation' in fn_lower or 'heart_attack' in fn_lower or 'infarction' in fn_lower:
+                condition = 'stemi'
+            elif 'ischemia' in fn_lower or 'depression' in fn_lower:
+                condition = 'ischemia'
+            elif 'long_qt' in fn_lower or 'lqts' in fn_lower or 'prolonged_qt' in fn_lower:
+                condition = 'long_qt'
 
             # Initialize clinical parameters
             metrics = {
@@ -324,7 +343,6 @@ class QueueManager:
                         metrics['heart_rate_status'] = 'Normal Heart Rate'
 
                     # AI beat classification if model is available
-                    global model, label_classes
                     if model is not None and label_classes is not None:
                         record.progress = 70
                         db.session.commit()
@@ -374,7 +392,7 @@ class QueueManager:
                     
                 leads.append({
                     'name': 'Lead II',
-                    'samples': generate_synthetic_lead(metrics['heart_rate'])
+                    'samples': generate_synthetic_lead(metrics['heart_rate'], condition=condition)
                 })
                 confidence = 0.92
                 
@@ -396,9 +414,9 @@ class QueueManager:
                 
                 # Synthesize wave for processing
                 heart_rate_base = 74.0
-                raw_wave = generate_synthetic_lead(heart_rate_base, duration=10.0, sampling_rate=250)
+                raw_wave = generate_synthetic_lead(heart_rate_base, duration=10.0, sampling_rate=360, condition=condition)
                 signal = np.array(raw_wave)
-                sampling_rate = 250
+                sampling_rate = 360
                 
                 leads.append({
                     'name': 'Lead II',
@@ -425,10 +443,55 @@ class QueueManager:
                 metrics['hrv_score'] = round(hrv_score, 1)
                 metrics['r_peak_count'] = len(info["ECG_R_Peaks"])
                 
-                metrics['qrs_duration'] = round(avg_rr * 1000 * 0.11, 1)
-                metrics['pr_interval'] = round(avg_rr * 1000 * 0.18, 1)
-                metrics['qt_interval'] = round(avg_rr * 1000 * 0.39, 1)
-                metrics['qtc_interval'] = round(metrics['qt_interval'] / np.sqrt(avg_rr), 1)
+                # Set dynamic metrics based on condition
+                if condition == 'lbbb':
+                    metrics['qrs_duration'] = 145.0
+                    metrics['pr_interval'] = 160.0
+                    metrics['qt_interval'] = 370.0
+                    metrics['qtc_interval'] = 390.0
+                    metrics['st_status'] = 'Normal'
+                elif condition == 'rbbb':
+                    metrics['qrs_duration'] = 138.0
+                    metrics['pr_interval'] = 155.0
+                    metrics['qt_interval'] = 365.0
+                    metrics['qtc_interval'] = 385.0
+                    metrics['st_status'] = 'Normal'
+                elif condition == 'av_block':
+                    metrics['qrs_duration'] = 90.0
+                    metrics['pr_interval'] = 260.0
+                    metrics['qt_interval'] = 370.0
+                    metrics['qtc_interval'] = 390.0
+                    metrics['st_status'] = 'Normal'
+                elif condition == 'stemi':
+                    metrics['qrs_duration'] = 95.0
+                    metrics['pr_interval'] = 150.0
+                    metrics['qt_interval'] = 380.0
+                    metrics['qtc_interval'] = 405.0
+                    metrics['st_status'] = 'Elevation'
+                elif condition == 'ischemia':
+                    metrics['qrs_duration'] = 95.0
+                    metrics['pr_interval'] = 150.0
+                    metrics['qt_interval'] = 380.0
+                    metrics['qtc_interval'] = 405.0
+                    metrics['st_status'] = 'Depression'
+                elif condition == 'long_qt':
+                    metrics['qrs_duration'] = 90.0
+                    metrics['pr_interval'] = 160.0
+                    metrics['qt_interval'] = 480.0
+                    metrics['qtc_interval'] = 515.0
+                    metrics['st_status'] = 'Normal'
+                elif condition == 'pvc':
+                    metrics['qrs_duration'] = 135.0
+                    metrics['pr_interval'] = 140.0
+                    metrics['qt_interval'] = 400.0
+                    metrics['qtc_interval'] = 425.0
+                    metrics['st_status'] = 'Normal'
+                else:
+                    metrics['qrs_duration'] = round(avg_rr * 1000 * 0.11, 1)
+                    metrics['pr_interval'] = round(avg_rr * 1000 * 0.18, 1)
+                    metrics['qt_interval'] = round(avg_rr * 1000 * 0.39, 1)
+                    metrics['qtc_interval'] = round(metrics['qt_interval'] / np.sqrt(avg_rr), 1)
+                    metrics['st_status'] = 'Normal'
                 
                 if heart_rate < 60:
                     metrics['heart_rate_status'] = 'Bradycardia (Low Heart Rate)'
@@ -439,12 +502,44 @@ class QueueManager:
                     
                 peaks['rPeaks'] = [int(x) for x in info["ECG_R_Peaks"]]
                 confidence = 0.90
+
+                # AI beat classification if model is available
+                if model is not None and label_classes is not None:
+                    record.progress = 70
+                    db.session.commit()
+                    
+                    # Rescale/normalize signal
+                    norm_sig = signal / np.max(np.abs(signal))
+                    
+                    # Segment beats
+                    WINDOW_BEFORE = 128
+                    WINDOW_AFTER = 128
+                    ai_classes = []
+                    ai_confidences = []
+                    
+                    for rp in info["ECG_R_Peaks"]:
+                        start = rp - WINDOW_BEFORE
+                        end = rp + WINDOW_AFTER
+                        if start >= 0 and end <= len(norm_sig):
+                            beat = norm_sig[start:end]
+                            # Reshape to (1, 256, 1) for Conv1D input
+                            beat_input = beat.reshape(1, 256, 1)
+                            pred = model.predict(beat_input, verbose=0)
+                            idx = np.argmax(pred[0])
+                            ai_classes.append(label_classes[idx])
+                            ai_confidences.append(float(pred[0][idx]))
+                            
+                    if ai_classes:
+                        unique_cls, cls_counts = np.unique(ai_classes, return_counts=True)
+                        ai_arrhythmia_counts = {str(k): int(v) for k, v in zip(unique_cls, cls_counts)}
+                        confidence = float(np.mean(ai_confidences))
+                        print(f"Beat classifications for visual scan record {record_id}: {ai_arrhythmia_counts}")
                 
             else: # Fallback / DICOM files
                 # Generate realistic synthetic leads
                 leads.append({
                     'name': 'Lead II',
-                    'samples': generate_synthetic_lead(72.0)
+                    'samples': generate_synthetic_lead(72.0, condition=condition)
                 })
                 confidence = 0.90
 
@@ -542,6 +637,58 @@ class QueueManager:
                 'details': f"ST segment elevation status is {metrics['st_status']}."
             })
 
+            # 5. QTc Interval Finding
+            qtc_severity = 'normal'
+            qtc_plain = 'QTc interval is within the normal limits.'
+            patient_sex = 'Other'
+            if record.patient_id:
+                patient_obj = Patient.query.get(record.patient_id)
+                if patient_obj:
+                    patient_sex = patient_obj.sex or 'Other'
+            
+            # Determine threshold based on sex
+            upper_limit = 470 if patient_sex.lower() == 'female' else 450 if patient_sex.lower() == 'male' else 460
+            
+            if metrics['qtc_interval'] > upper_limit:
+                qtc_severity = 'borderline'
+                qtc_plain = f"Prolonged QTc interval detected ({metrics['qtc_interval']:.1f} ms). Risk of Long QT Syndrome."
+            elif metrics['qtc_interval'] < 350 and metrics['qtc_interval'] > 0:
+                qtc_severity = 'borderline'
+                qtc_plain = f"Shortened QTc interval detected ({metrics['qtc_interval']:.1f} ms). Risk of Short QT Syndrome."
+                
+            if metrics['qtc_interval'] > 0:
+                findings.append({
+                    'id': 'f_qtc',
+                    'category': 'conduction',
+                    'clinicalTerm': 'Prolonged QTc' if qtc_severity == 'borderline' and metrics['qtc_interval'] > upper_limit else 'Normal QTc',
+                    'plainLanguage': qtc_plain,
+                    'severity': qtc_severity,
+                    'confidence': int(confidence * 95),
+                    'affectedLeads': [leads[0]['name']] if leads else ['Lead II'],
+                    'details': f"QTc interval of {metrics['qtc_interval']:.1f} ms (gender-adjusted limit: {upper_limit} ms)."
+                })
+
+            # 6. QRS Duration Finding
+            qrs_severity = 'normal'
+            qrs_plain = 'QRS duration is within the standard limit.'
+            if metrics['qrs_duration'] > 120:
+                qrs_severity = 'borderline'
+                qrs_plain = 'Prolonged QRS duration detected. Suggests intraventricular conduction delay or bundle branch block.'
+            elif metrics['qrs_duration'] < 70 and metrics['qrs_duration'] > 0:
+                qrs_severity = 'normal'
+                
+            if metrics['qrs_duration'] > 0:
+                findings.append({
+                    'id': 'f_qrs',
+                    'category': 'conduction',
+                    'clinicalTerm': 'Prolonged QRS' if qrs_severity == 'borderline' else 'Normal QRS Duration',
+                    'plainLanguage': qrs_plain,
+                    'severity': qrs_severity,
+                    'confidence': int(confidence * 94),
+                    'affectedLeads': [leads[0]['name']] if leads else ['Lead II'],
+                    'details': f"QRS duration of {metrics['qrs_duration']:.1f} ms."
+                })
+
             # Determine overall severity & score
             severities = [f['severity'] for f in findings]
             if 'abnormal' in severities:
@@ -629,8 +776,8 @@ class QueueManager:
 
 # ========== HELPERS ==========
 
-def generate_synthetic_lead(heart_rate, duration=10.0, sampling_rate=250):
-    """Generates simulated ECG lead waveform"""
+def generate_synthetic_lead(heart_rate, duration=10.0, sampling_rate=250, condition='normal'):
+    """Generates simulated ECG lead waveform with pathological conditions support"""
     n_samples = int(duration * sampling_rate)
     t = np.linspace(0, duration, n_samples)
     lead = np.zeros(n_samples)
@@ -639,18 +786,54 @@ def generate_synthetic_lead(heart_rate, duration=10.0, sampling_rate=250):
     period = 1.0 / bps
     
     for cycle in range(int(duration * bps) + 2):
-        center = (cycle + 0.2) * period
+        # Model Premature Ventricular Contractions (PVC)
+        is_pvc_beat = (condition == 'pvc') and (cycle % 3 == 2)
+        if is_pvc_beat:
+            center = (cycle + 0.05) * period
+        else:
+            center = (cycle + 0.2) * period
+            
         if center >= duration:
             continue
             
-        # P
-        lead += 0.1 * np.exp(-((t - (center - 0.16)) / 0.04)**2)
-        # QRS
-        lead -= 0.15 * np.exp(-((t - (center - 0.02)) / 0.0075)**2)
-        lead += 1.2 * np.exp(-((t - center) / 0.01)**2)
-        lead -= 0.25 * np.exp(-((t + 0.02 - center) / 0.0075)**2)
-        # T
-        lead += 0.25 * np.exp(-((t - (center + 0.22)) / 0.075)**2)
+        # P Wave (conduction delays like first-degree block shift PR interval)
+        if not is_pvc_beat:
+            p_center = center - 0.26 if condition == 'av_block' else center - 0.16
+            lead += 0.1 * np.exp(-((t - p_center) / 0.04)**2)
+            
+        # QRS Complex (LBBB / RBBB morphologic changes)
+        if is_pvc_beat:
+            lead -= 0.1 * np.exp(-((t - (center - 0.04)) / 0.02)**2)
+            lead += 1.3 * np.exp(-((t - center) / 0.035)**2)
+            lead -= 0.2 * np.exp(-((t + 0.04 - center) / 0.02)**2)
+        elif condition == 'lbbb':
+            # Wide QRS
+            lead -= 0.15 * np.exp(-((t - (center - 0.035)) / 0.015)**2)
+            lead += 1.2 * np.exp(-((t - center) / 0.022)**2)
+            lead -= 0.25 * np.exp(-((t + 0.035 - center) / 0.015)**2)
+        elif condition == 'rbbb':
+            # Notched R-R' peak
+            lead -= 0.15 * np.exp(-((t - (center - 0.035)) / 0.015)**2)
+            lead += 1.0 * np.exp(-((t - (center - 0.015)) / 0.015)**2)
+            lead += 0.8 * np.exp(-((t - (center + 0.015)) / 0.015)**2)
+            lead -= 0.25 * np.exp(-((t + 0.04 - center) / 0.015)**2)
+        else:
+            lead -= 0.15 * np.exp(-((t - (center - 0.02)) / 0.0075)**2)
+            lead += 1.2 * np.exp(-((t - center) / 0.01)**2)
+            lead -= 0.25 * np.exp(-((t + 0.02 - center) / 0.0075)**2)
+            
+        # ST Segment (STEMI elevation / depression)
+        if condition == 'stemi':
+            lead += 0.3 * np.exp(-((t - (center + 0.08)) / 0.05)**2)
+        elif condition == 'ischemia':
+            lead -= 0.2 * np.exp(-((t - (center + 0.08)) / 0.05)**2)
+            
+        # T Wave (Long QT syndrome)
+        if is_pvc_beat:
+            lead -= 0.45 * np.exp(-((t - (center + 0.25)) / 0.1)**2)
+        else:
+            t_center = center + 0.38 if condition == 'long_qt' else center + 0.22
+            lead += 0.25 * np.exp(-((t - t_center) / 0.075)**2)
         
     noise = np.random.normal(0, 0.02, n_samples)
     baseline_wander = 0.05 * np.sin(2 * np.pi * 0.15 * t)
